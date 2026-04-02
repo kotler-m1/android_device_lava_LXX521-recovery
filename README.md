@@ -32,11 +32,7 @@
 | Display | ✅ Working |
 | ADB | ✅ Working |
 | ADB Sideload | ✅ Working |
-| MTP | ✅ Working |
-| Storage Mount / Unmount | ✅ Working |
-| .zip Flashing | ✅ Working |
-| Backup / Restore | ✅ Working |
-| OTG | ✅ Working |
+
 
 ---
 
