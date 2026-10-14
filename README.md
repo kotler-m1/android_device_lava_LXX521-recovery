@@ -28,10 +28,7 @@
 
 | Feature | Status |
 |---|---|
-| Touch | ✅ Working |
-| Display | ✅ Working |
-| ADB | ✅ Working |
-| ADB Sideload | ✅ Working |
+
 
 
 ---
