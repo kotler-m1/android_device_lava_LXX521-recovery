@@ -1,0 +1,99 @@
+import /init.recovery.project.rc
+
+on init
+    setprop sys.usb.configfs 1
+    setprop sys.usb.controller "11201000.usb0"
+
+
+on fs && property:ro.debuggable=0
+    # distinguish USB shoulde connect or not, i.e. CDP vs SDP
+    # set charging free due to it wait for USB activation
+
+on boot
+    exec u:r:update_engine:s0 root root -- /system/bin/mtk_plpath_utils
+    start adbd
+
+
+# ===========================================================================
+# TrustKernel TEE + KeyMint + Gatekeeper (needed for FBE decryption)
+# Everything above this line is your original file, unchanged.
+# Service arguments / start order come from the stock vendor trustkernel.rc.
+# Not included on purpose: mtk_storageproxyd (Trusty only), tee_check_keybox.
+# ===========================================================================
+
+# Stock starts teed from "on post-fs". Recovery has no vendor mount_all,
+# so mount the two partitions teed needs (--prot paths) ourselves.
+on post-fs
+    mkdir /mnt/vendor 0755 root root
+    mkdir /mnt/vendor/persist
+    mkdir /mnt/vendor/protect_f
+    mount ext4 /dev/block/by-name/persist /mnt/vendor/persist nosuid nodev noatime noauto_da_alloc,commit=1,nodelalloc
+    mount ext4 /dev/block/by-name/protect1 /mnt/vendor/protect_f nosuid nodev noatime noauto_da_alloc,commit=1,nodelalloc
+
+    # same dirs/owners as stock so files stay system-owned after you reboot
+    mkdir /mnt/vendor/persist/t6
+    chown system system /mnt/vendor/persist/t6
+    mkdir /mnt/vendor/protect_f/tee
+    chown system system /mnt/vendor/protect_f/tee
+
+    # tkcore.ko creates these nodes; wait for them, then apply stock permissions
+    wait /dev/tkcore_admin 10
+    chown system system /dev/tkcore_admin
+    chmod 0600 /dev/tkcore_admin
+    chown root system /dev/tkcore_client
+    chmod 0660 /dev/tkcore_client
+    chown root system /dev/tkcore_fp
+    chmod 0660 /dev/tkcore_fp
+
+    start teed
+
+# KeyMint + Gatekeeper need servicemanager and teed already running
+on boot
+    start vendor.keymint-3-0-trustkernel
+    start vendor.gatekeeper
+
+# user/group stay "system" on purpose: running as root would create
+# root-owned files on persist/protect_f and could break the stock OS later.
+service teed /vendor/bin/teed \
+    --tzdev /dev/tkcore_admin \
+    --datapath /data/vendor/t6/fs \
+    --sptapath /data/vendor/t6/app \
+    --systapath /vendor/app/t6 \
+    --rpmbdev /dev/mmcblk0rpmb \
+    --rpmbdev /dev/rpmb0 \
+    --prot /mnt/vendor/persist/t6 \
+    --prot /mnt/vendor/protect_f/tee \
+    --prebuilt /vendor/app/t6/data \
+    --logpath /data/vendor/t6/tkcore.log \
+    --proprefix vendor.trustkernel
+    disabled
+    capabilities SYS_RAWIO
+    user system
+    group system
+    seclabel u:r:recovery:s0
+
+service vendor.keymint-3-0-trustkernel /vendor/bin/hw/android.hardware.security.keymint@3.0-service.trustkernel
+    disabled
+    user system
+    group system
+    seclabel u:r:recovery:s0
+
+service vendor.gatekeeper /vendor/bin/hw/android.hardware.gatekeeper-service.trustkernel
+    disabled
+    user system
+    group system
+    seclabel u:r:recovery:s0
+
+# OPTIONAL /data handshake - OFF by default. Stock enables teed's /data-backed
+# storage only after /data is up. Decryption should not need it (stock keymint
+# is class early_hal and starts before /data). Enable only if recovery.log shows
+# teed/keymint stalling on /data/vendor/t6, and only after a successful decrypt:
+#
+# on property:vendor.trustkernel.fs.state=prepare
+#     mkdir /data/vendor/t6
+#     chown system system /data/vendor/t6
+#     mkdir /data/vendor/t6/fs
+#     chown system system /data/vendor/t6/fs
+#     mkdir /data/vendor/t6/app
+#     chown system system /data/vendor/t6/app
+#     setprop vendor.trustkernel.fs.state ready
