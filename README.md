@@ -24,25 +24,19 @@
 
 ---
 
-## ✅ Working Features
-
-| Feature | Status |
-|---|---|
-
-
-
----
-
 ## 📥 Downloads
 
-Get the latest build from the [Releases](../../releases/latest) page.
+Get the latest active build from 'fahimfrk'  [Releases](https://github.com/fahimfrk/Dimensity7300-Device-Tree-Lava-Play-Ultra/releases) page.
 
 ---
 
-## 🚀 Flash Instructions
+## 🚀 Flash Instructions & stock Firmware restore guide.
 
 Refer to the full flashing guide here:
 👉 [FLASH_GUIDE.md](./FLASH_GUIDE.md)
+
+👉 Have problem or bootloop:
+[RESTORE_GUIDE.md](./RESTORE_GUIDE.md)
 
 ---
 
@@ -61,7 +55,7 @@ Refer to the full flashing guide here:
 
 Found a bug? Have a question? Join the Telegram support channel and let us know:
 
-[![Telegram](https://img.shields.io/badge/Telegram-Support%20Channel-blue?style=for-the-badge&logo=telegram)](https://t.me/lava_play_ultra)
+[![Telegram](https://img.shields.io/badge/Telegram-Support%20Channel-blue?style=for-the-badge&logo=telegram)](https://t.me/play_ultra)
 
 > Please include your device details, what you were doing, and a screenshot or log when reporting a bug. It helps a lot!
 
