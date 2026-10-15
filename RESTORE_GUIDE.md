@@ -19,7 +19,9 @@
 | SP Flash Tool | [spflashtools.com](https://spflashtools.com/category/windows) |
 | MTK Driver | [mtkdriver.com](https://mtkdriver.com/mtk-driver-v5-2307/) |
 | Device Firmware | [androidmtk.com](https://androidmtk.com/download-lava-stock-rom-firmware) → scroll down & search for **Lava Play Ultra 5G** |
+| androidmtk error |  [needrom.com](https://www.needrom.com/download/lava-play-ultra-5g-lxx521/) → log-in or sign-up latest firmware file will be at bottom.
 
+>Note: Till now LAVA website not providing download firmware page, if you are not capible to doing this stuff visit your nearest LAVA care.
 ---
 
 ## 📁 Step 2 — Prepare Your Folder
@@ -59,13 +61,29 @@ After downloading all three files, **extract them all into one single folder**:
 
 ![SP Flash Tool - Partitions Loaded](images/spflash-loaded.png)
 
+
 ---
+
+## Configure SP Flash Tool For Linux
+1. Download [SP-Flah-tool-for-linux](https://spflashtools.com/linux/sp-flash-tool-v6-2228-for-linux/)
+2. Extracte into folder
+3. Open terminal:
+   > sudo chmod +x SPFlashToolV6.sh 
+   
+   > sudo ./SPFlashToolV6.sh
+4. Remaining step are same mentions above. 
+
+--- 
+
 
 ## ⚠️ Step 5 — Select Firmware Upgrade Mode
 
-> 🚨 **CRITICAL WARNING**: Only select **"Firmware Upgrade"** from the dropdown box.  
-> **DO NOT** select `Format All + Download` — this will **permanently erase your device IMEI**!
+> 🚨 **CRITICAL WARNING**: Only select **"Firmware Upgrade"** or **"Download"*** from the dropdown box.  
+> **DO NOT** select `Format All + Download` — this will **permanently erase your device IMEI, NVRAM data**!
 
+Select `Download Only` ✅ when you khow which partition may be corrupted like: 
+> Vendor_boot, super, boot or VBMETA
+Tick the khown partiton to back to stock. if not then follow next step.
 Select: `Firmware Upgrade` ✅  
 Never select: `Format All + Download` ❌
 
@@ -102,7 +120,7 @@ Never select: `Format All + Download` ❌
 
 Join our Telegram support channel:
 
-[![Telegram](https://img.shields.io/badge/Telegram-Support%20Channel-blue?style=for-the-badge&logo=telegram)](https://t.me/lava_play_ultra)
+[![Telegram](https://img.shields.io/badge/Telegram-Support%20Channel-blue?style=for-the-badge&logo=telegram)](https://t.me/play_ultra)
 
 ---
 
