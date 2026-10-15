@@ -51,6 +51,7 @@ fastboot flashing unlock
 
 On your device screen, use Volume Up to confirm and Volume Down to cancel.
 
+> After running unlock command it nothing showing, just press Vol- button one time under 5 Sec.
 > ⚠️ **Unlocking the bootloader will wipe all data on your device. Back up everything first.**
 
 After unlocking, complete the initial device setup, then re-enable Developer Options and USB Debugging before continuing.
