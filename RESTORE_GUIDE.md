@@ -94,7 +94,7 @@ Never select: `Format All + Download` ❌
 ## 📲 Step 6 — Flash the Firmware
 
 1. **Completely power off** your device
-   - If your device is stuck in a reboot loop: hold the power button → release when the screen goes **off** → release before the display lights back on
+   - If your device is stuck in a reboot loop: hold the power button → release when the screen goes **off**
 2. Connect your device to PC via **original USB cable**
 3. On successful detection, you will see `EMMC` change to `UFS` in SP Flash Tool, and device memory info will appear in the **Device Info** panel
 4. Click the **"Download"** button
