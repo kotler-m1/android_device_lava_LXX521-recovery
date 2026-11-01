@@ -1,4 +1,4 @@
-# 🛠️ TWRP/Orange fox Custom Recovery — Lava Play Ultra 5G (LXX521)
+# 🛠️ Custom Recovery — Lava Play Ultra 5G (LXX521)
 
 <div align="center">
 
