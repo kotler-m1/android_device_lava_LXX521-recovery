@@ -2,3 +2,15 @@ mtk_disp_notify.ko
 mtk_panel_ext.ko
 focaltech_tp.ko
 i2c-mt65xx.ko
+ffa_v10.ko
+teeperf.ko
+tkcore.ko
+tkcore_drv.ko
+rpmb.ko
+ufs-mediatek-dbg.ko
+blocktag.ko
+irq-dbg.ko
+mrdump.ko
+aee_aed.ko
+ufs-mediatek-mod.ko
+rpmb-mtk.ko

@@ -1,34 +1,38 @@
-# LAVA LXX521 - TrustKernel TEE / KeyMint / Gatekeeper recovery services
-#
-# Adapted from the LXX521 Android 15 stock init configuration for recovery.
-# This is an experimental integration file: validate service startup and
-# dependency compatibility on the target before treating FBE decryption as
-# working. It does not format or erase any partition.
+# LAVA LXX521 (MT6878) - TrustKernel TEE / KeyMint AIDL 3.0 / Gatekeeper AIDL 1.0
+# Recovery adaptation of the stock Android 15 TrustKernel startup configuration.
+# EXPERIMENTAL: verify init triggers, TEE readiness and Android 34 ABI compatibility
+# on-device before relying on recovery FBE decryption. No partition is formatted.
 
 on init
     mkdir /mnt/vendor 0755 root root
-    mkdir /mnt/vendor/persist 0755 root root
-    mkdir /mnt/vendor/protect_f 0755 root root
+    mkdir /mnt/vendor/persist 0750 system system
+    mkdir /mnt/vendor/protect_f 0750 system system
 
-# The stock TrustKernel daemon stores persistent state on persist/protect1.
-# Mount only these two partitions; never format them from recovery.
+# TrustKernel uses persist and protect1 for TEE-owned persistent state.
+# Match the stock mount options; these commands only mount existing filesystems.
 on post-fs
     wait /dev/block/by-name/persist 10
     wait /dev/block/by-name/protect1 10
 
-    mount ext4 /dev/block/by-name/persist /mnt/vendor/persist noatime nosuid nodev noauto_da_alloc,commit=1,nodelalloc
-    mount ext4 /dev/block/by-name/protect1 /mnt/vendor/protect_f noatime nosuid nodev noauto_da_alloc,commit=1,nodelalloc
+    mount ext4 /dev/block/by-name/persist /mnt/vendor/persist rw noatime,nosuid,nodev,noauto_da_alloc,commit=1,nodelalloc
+    mount ext4 /dev/block/by-name/protect1 /mnt/vendor/protect_f rw noatime,nosuid,nodev,noauto_da_alloc,commit=1,nodelalloc
+
+    restorecon /mnt/vendor/persist
+    restorecon /mnt/vendor/protect_f
 
     mkdir /mnt/vendor/persist/t6 0770 system system
     chown system system /mnt/vendor/persist/t6
+    restorecon /mnt/vendor/persist/t6
+
     mkdir /mnt/vendor/protect_f/tee 0770 system system
     chown system system /mnt/vendor/protect_f/tee
+    restorecon /mnt/vendor/protect_f/tee
 
-    # Wait for the TrustKernel and RPMB device nodes created by the kernel
-    # modules. ueventd permissions are reinforced here for recovery.
+    # These nodes are created by the TrustKernel/RPMB kernel modules.
     wait /dev/tkcore_admin 10
     wait /dev/tkcore_client 10
     wait /dev/rpmb0 10
+
     chmod 0600 /dev/tkcore_admin
     chown system system /dev/tkcore_admin
     chmod 0660 /dev/tkcore_client
@@ -36,10 +40,11 @@ on post-fs
     chmod 0660 /dev/rpmb0
     chown root system /dev/rpmb0
 
-    start lxx521_teed
+    start teed
 
-# LXX521 stock userdata uses FBE (fscrypt v2). Create the same T6 data
-# directories used by the stock TrustKernel init after /data is mounted.
+# On normal Android, post-fs-data occurs after /data is mounted and before
+# credential-encrypted user storage is unlocked. Recovery must be checked to
+# confirm this trigger runs only after its /data mount is available.
 on post-fs-data
     setprop vendor.trustkernel.fs.mode 3
     setprop vendor.trustkernel.fs.state prepare
@@ -51,19 +56,23 @@ on property:vendor.trustkernel.fs.state=prepare
     chown system system /data/vendor/t6/fs
     mkdir /data/vendor/t6/app 0770 system system
     chown system system /data/vendor/t6/app
+    restorecon /data/vendor/t6
+    restorecon /data/vendor/t6/fs
+    restorecon /data/vendor/t6/app
     setprop vendor.trustkernel.fs.state ready
 
-# Start the Android 15 AIDL HAL services only after teed reports ready and
-# the T6 data directories have been prepared.
-on property:vendor.trustkernel.ready=true && property:vendor.trustkernel.fs.state=ready
-    start lxx521_keymint
-    start lxx521_gatekeeper
+# KeyMint and Gatekeeper must not wait for the FBE user's credential unlock.
+# Start them once teed has initialized its TrustKernel connection.
+on property:vendor.trustkernel.ready=true
+    start vendor.keymint-3-0-trustkernel
+    start vendor.gatekeeper
 
-service lxx521_teed /vendor/bin/teed \
+service teed /vendor/bin/teed \
     --tzdev /dev/tkcore_admin \
     --datapath /data/vendor/t6/fs \
     --sptapath /data/vendor/t6/app \
     --systapath /vendor/app/t6 \
+    --rpmbdev /dev/mmcblk0rpmb \
     --rpmbdev /dev/rpmb0 \
     --prot /mnt/vendor/persist/t6 \
     --prot /mnt/vendor/protect_f/tee \
@@ -76,13 +85,13 @@ service lxx521_teed /vendor/bin/teed \
     capabilities SYS_RAWIO
     disabled
 
-service lxx521_keymint /vendor/bin/hw/android.hardware.security.keymint@3.0-service.trustkernel
+service vendor.keymint-3-0-trustkernel /vendor/bin/hw/android.hardware.security.keymint@3.0-service.trustkernel
     class early_hal
     user system
     group system
     disabled
 
-service lxx521_gatekeeper /vendor/bin/hw/android.hardware.gatekeeper-service.trustkernel
+service vendor.gatekeeper /vendor/bin/hw/android.hardware.gatekeeper-service.trustkernel
     class hal
     user system
     group system

@@ -90,14 +90,15 @@ PRODUCT_PACKAGES += \
 # Expected source layout:
 #   $(DEVICE_PATH)/prebuilt/recovery/vendor/...
 #
-# These are copied into the recovery ramdisk's /vendor tree. This only stages
-# the payload; a recovery-specific init script and dependency compatibility
-# checks are still required before the services can be started safely.
+# These are copied into the recovery ramdisk's /vendor tree together with the
+# recovery-specific init file below. Runtime ABI/linker compatibility remains
+# unverified and must be checked before relying on FBE decryption.
 # -----------------------------------------------------------------------------
 LXX521_RECOVERY_ROOT := $(TARGET_COPY_OUT_RECOVERY)/root
 LXX521_TK_VENDOR := $(DEVICE_PATH)/prebuilt/recovery/vendor
 
 PRODUCT_COPY_FILES += \
+    $(DEVICE_PATH)/recovery/root/init.recovery.trustkernel.rc:$(LXX521_RECOVERY_ROOT)/init.recovery.trustkernel.rc \
     $(LXX521_TK_VENDOR)/bin/teed:$(LXX521_RECOVERY_ROOT)/vendor/bin/teed \
     $(LXX521_TK_VENDOR)/bin/hw/android.hardware.security.keymint@3.0-service.trustkernel:$(LXX521_RECOVERY_ROOT)/vendor/bin/hw/android.hardware.security.keymint@3.0-service.trustkernel \
     $(LXX521_TK_VENDOR)/bin/hw/android.hardware.gatekeeper-service.trustkernel:$(LXX521_RECOVERY_ROOT)/vendor/bin/hw/android.hardware.gatekeeper-service.trustkernel \
@@ -125,11 +126,17 @@ PRODUCT_COPY_FILES += \
 # versions of libbinder_ndk/libbase/libcutils over the recovery's own libraries.
 TARGET_RECOVERY_DEVICE_MODULES += \
     libbinder_ndk \
+    libbinder \
+    libutils \
+    libvndksupport \
     libhidlbase \
     libhardware
 
 RECOVERY_LIBRARY_SOURCE_FILES += \
     $(TARGET_OUT_SHARED_LIBRARIES)/libbinder_ndk.so \
+    $(TARGET_OUT_SHARED_LIBRARIES)/libbinder.so \
+    $(TARGET_OUT_SHARED_LIBRARIES)/libutils.so \
+    $(TARGET_OUT_SHARED_LIBRARIES)/libvndksupport.so \
     $(TARGET_OUT_SHARED_LIBRARIES)/libhidlbase.so \
     $(TARGET_OUT_SHARED_LIBRARIES)/libhardware.so
 

@@ -137,7 +137,7 @@ BOARD_BOOTIMAGE_PARTITION_SIZE := 67108864
 BOARD_VENDOR_BOOTIMAGE_PARTITION_SIZE := 67108864
 BOARD_HAS_LARGE_FILESYSTEM := true
 BOARD_SYSTEMIMAGE_PARTITION_TYPE := ext4
-BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := f2fs
+BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := ext4
 BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := ext4
 TARGET_COPY_OUT_VENDOR := vendor
 BOARD_SUPER_PARTITION_SIZE := 4844463520
@@ -172,22 +172,22 @@ PLATFORM_SECURITY_PATCH := 2099-12-31
 VENDOR_SECURITY_PATCH := 2099-12-31
 PLATFORM_VERSION := 16.1.0
 
-
 # ============================================================
 # Encryption / FBE
 # ============================================================
-# LXX521 stock userdata uses F2FS with file-based encryption v2.
-# These options enable TWRP's crypto/FBE support at build time.
+# LXX521 stock Android 15 userdata uses F2FS and fscrypt/FBE v2.
+# TW_INCLUDE_CRYPTO enables the recovery crypto implementation. Keep the
+# explicit FBE options for this Android 12.1-based recovery configuration.
 
 TW_INCLUDE_CRYPTO := true
 TW_INCLUDE_CRYPTO_FBE := true
 TW_INCLUDE_FBE_METADATA_DECRYPT := true
+TW_USE_FSCRYPT_POLICY := 2
 
 BOARD_USES_METADATA_PARTITION := true
 BOARD_ROOT_EXTRA_FOLDERS += metadata
-
-TW_USE_FSCRYPT_POLICY := 2
 TW_PREPARE_DATA_MEDIA_EARLY := true
+
 
 # TWRP Configuration
 TW_THEME := portrait_hdpi
@@ -211,7 +211,23 @@ TW_INCLUDE_PYTHON := true
 
 # Modules
 TW_LOAD_VENDOR_MODULES_EXCLUDE_GKI := true
-TW_LOAD_VENDOR_MODULES := $(shell echo \"$(shell ls $(DEVICE_PATH)/recovery/root/vendor/lib/modules)\")
+# The first four modules are the existing display/touch modules in the recovery
+# ramdisk. The TrustKernel modules are requested from the stock vendor_boot
+# module directory because TW_LOAD_VENDOR_BOOT_MODULES is enabled below.
+TW_LOAD_VENDOR_MODULES := $(strip \
+    $(notdir $(wildcard $(DEVICE_PATH)/recovery/root/vendor/lib/modules/*.ko)) \
+    ffa_v10.ko \
+    teeperf.ko \
+    tkcore.ko \
+    tkcore_drv.ko \
+    rpmb.ko \
+    rpmb-mtk.ko \
+    ufs-mediatek-mod.ko \
+    ufs-mediatek-dbg.ko \
+    blocktag.ko \
+    irq-dbg.ko \
+    mrdump.ko \
+    aee_aed.ko)
 
 # Vendor_boot recovery ramdisk
 BOARD_USES_RECOVERY_AS_BOOT := false
@@ -230,17 +246,4 @@ TW_INCLUDE_FASTBOOTD := true
 TWRP_INCLUDE_LOGCAT := true
 TWRP_USES_LOGD := true
 
-# ============================================================
-# CRYPTO CONFIGURATION
-# ============================================================
 
-TW_INCLUDE_CRYPTO := true
-TW_INCLUDE_CRYPTO_FBE := true
-TW_INCLUDE_FBE_METADATA_DECRYPT := true
-
-TW_USE_FSCRYPT_POLICY := 2
-
-BOARD_USES_METADATA_PARTITION := true
-BOARD_ROOT_EXTRA_FOLDERS += metadata
-
-TW_PREPARE_DATA_MEDIA_EARLY := true
