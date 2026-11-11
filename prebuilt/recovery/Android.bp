@@ -1,0 +1,182 @@
+// LXX521 TrustKernel stock prebuilts for the recovery ramdisk.
+// ELF files must be modules, not PRODUCT_COPY_FILES.
+
+cc_prebuilt_binary {
+    name: "lxx521_teed",
+    srcs: ["vendor/bin/teed"],
+    stem: "teed",
+    compile_multilib: "64",
+    recovery: true,
+    install_in_root: true,
+    relative_install_path: "vendor/bin",
+    strip: { none: true },
+    check_elf_files: false,
+}
+
+cc_prebuilt_binary {
+    name: "lxx521_keymint_service",
+    srcs: ["vendor/bin/hw/android.hardware.security.keymint@3.0-service.trustkernel"],
+    stem: "android.hardware.security.keymint@3.0-service.trustkernel",
+    compile_multilib: "64",
+    recovery: true,
+    install_in_root: true,
+    relative_install_path: "vendor/bin/hw",
+    strip: { none: true },
+    check_elf_files: false,
+}
+
+cc_prebuilt_binary {
+    name: "lxx521_gatekeeper_service",
+    srcs: ["vendor/bin/hw/android.hardware.gatekeeper-service.trustkernel"],
+    stem: "android.hardware.gatekeeper-service.trustkernel",
+    compile_multilib: "64",
+    recovery: true,
+    install_in_root: true,
+    relative_install_path: "vendor/bin/hw",
+    strip: { none: true },
+    check_elf_files: false,
+}
+
+cc_prebuilt_library_shared {
+    name: "lxx521_libteec",
+    srcs: ["vendor/lib64/libteec.so"],
+    stem: "libteec",
+    compile_multilib: "64",
+    recovery: true,
+    install_in_root: true,
+    relative_install_path: "vendor/lib64",
+    strip: { none: true },
+    check_elf_files: false,
+}
+
+cc_prebuilt_library_shared {
+    name: "lxx521_libteecommon",
+    srcs: ["vendor/lib64/libTEECommon.so"],
+    stem: "libTEECommon",
+    compile_multilib: "64",
+    recovery: true,
+    install_in_root: true,
+    relative_install_path: "vendor/lib64",
+    strip: { none: true },
+    check_elf_files: false,
+}
+
+cc_prebuilt_library_shared {
+    name: "lxx521_libkeymint",
+    srcs: ["vendor/lib64/libkeymint.so"],
+    stem: "libkeymint",
+    compile_multilib: "64",
+    recovery: true,
+    install_in_root: true,
+    relative_install_path: "vendor/lib64",
+    strip: { none: true },
+    check_elf_files: false,
+}
+
+cc_prebuilt_library_shared {
+    name: "lxx521_libkeymint_tool",
+    srcs: ["vendor/lib64/libkeymint_tool.so"],
+    stem: "libkeymint_tool",
+    compile_multilib: "64",
+    recovery: true,
+    install_in_root: true,
+    relative_install_path: "vendor/lib64",
+    strip: { none: true },
+    check_elf_files: false,
+}
+
+cc_prebuilt_library_shared {
+    name: "lxx521_lib_android_keymaster_keymint_utils",
+    srcs: ["vendor/lib64/lib_android_keymaster_keymint_utils.so"],
+    stem: "lib_android_keymaster_keymint_utils",
+    compile_multilib: "64",
+    recovery: true,
+    install_in_root: true,
+    relative_install_path: "vendor/lib64",
+    strip: { none: true },
+    check_elf_files: false,
+}
+
+cc_prebuilt_library_shared {
+    name: "lxx521_libcppbor_external",
+    srcs: ["vendor/lib64/libcppbor_external.so"],
+    stem: "libcppbor_external",
+    compile_multilib: "64",
+    recovery: true,
+    install_in_root: true,
+    relative_install_path: "vendor/lib64",
+    strip: { none: true },
+    check_elf_files: false,
+}
+
+cc_prebuilt_library_shared {
+    name: "lxx521_libgatekeeper",
+    srcs: ["vendor/lib64/libgatekeeper.so"],
+    stem: "libgatekeeper",
+    compile_multilib: "64",
+    recovery: true,
+    install_in_root: true,
+    relative_install_path: "vendor/lib64",
+    strip: { none: true },
+    check_elf_files: false,
+}
+
+cc_prebuilt_library_shared {
+    name: "lxx521_keymint_v3_ndk",
+    srcs: ["vendor/lib64/android.hardware.security.keymint-V3-ndk.so"],
+    stem: "android.hardware.security.keymint-V3-ndk",
+    compile_multilib: "64",
+    recovery: true,
+    install_in_root: true,
+    relative_install_path: "vendor/lib64",
+    strip: { none: true },
+    check_elf_files: false,
+}
+
+cc_prebuilt_library_shared {
+    name: "lxx521_rkp_v3_ndk",
+    srcs: ["vendor/lib64/android.hardware.security.rkp-V3-ndk.so"],
+    stem: "android.hardware.security.rkp-V3-ndk",
+    compile_multilib: "64",
+    recovery: true,
+    install_in_root: true,
+    relative_install_path: "vendor/lib64",
+    strip: { none: true },
+    check_elf_files: false,
+}
+
+cc_prebuilt_library_shared {
+    name: "lxx521_sharedsecret_v1_ndk",
+    srcs: ["vendor/lib64/android.hardware.security.sharedsecret-V1-ndk.so"],
+    stem: "android.hardware.security.sharedsecret-V1-ndk",
+    compile_multilib: "64",
+    recovery: true,
+    install_in_root: true,
+    relative_install_path: "vendor/lib64",
+    strip: { none: true },
+    check_elf_files: false,
+}
+
+cc_prebuilt_library_shared {
+    name: "lxx521_secureclock_v1_ndk",
+    srcs: ["vendor/lib64/android.hardware.security.secureclock-V1-ndk.so"],
+    stem: "android.hardware.security.secureclock-V1-ndk",
+    compile_multilib: "64",
+    recovery: true,
+    install_in_root: true,
+    relative_install_path: "vendor/lib64",
+    strip: { none: true },
+    check_elf_files: false,
+}
+
+cc_prebuilt_library_shared {
+    name: "lxx521_gatekeeper_v1_ndk",
+    srcs: ["vendor/lib64/android.hardware.gatekeeper-V1-ndk.so"],
+    stem: "android.hardware.gatekeeper-V1-ndk",
+    compile_multilib: "64",
+    recovery: true,
+    install_in_root: true,
+    relative_install_path: "vendor/lib64",
+    strip: { none: true },
+    check_elf_files: false,
+}

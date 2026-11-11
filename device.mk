@@ -85,41 +85,48 @@ PRODUCT_PACKAGES += \
     fastbootd
 
 # -----------------------------------------------------------------------------
-# LXX521 TrustKernel payload (staged from the stock Android 15 vendor image)
+# LXX521 TrustKernel recovery integration
 #
-# Expected source layout:
-#   $(DEVICE_PATH)/prebuilt/recovery/vendor/...
-#
-# These are copied into the recovery ramdisk's /vendor tree together with the
-# recovery-specific init file below. Runtime ABI/linker compatibility remains
-# unverified and must be checked before relying on FBE decryption.
+# ELF executables and shared libraries are declared in prebuilt/recovery/Android.bp
+# as cc_prebuilt_binary / cc_prebuilt_library_shared modules. Do NOT add ELF files
+# to PRODUCT_COPY_FILES: the build's check-non-elf target rejects that.
+# The non-ELF T6 payloads are declared as ETC prebuilts in prebuilt/recovery/Android.mk.
 # -----------------------------------------------------------------------------
 LXX521_RECOVERY_ROOT := $(TARGET_COPY_OUT_RECOVERY)/root
 LXX521_TK_VENDOR := $(DEVICE_PATH)/prebuilt/recovery/vendor
 
 PRODUCT_COPY_FILES += \
     $(DEVICE_PATH)/recovery/root/init.recovery.trustkernel.rc:$(LXX521_RECOVERY_ROOT)/init.recovery.trustkernel.rc \
-    $(LXX521_TK_VENDOR)/bin/teed:$(LXX521_RECOVERY_ROOT)/vendor/bin/teed \
-    $(LXX521_TK_VENDOR)/bin/hw/android.hardware.security.keymint@3.0-service.trustkernel:$(LXX521_RECOVERY_ROOT)/vendor/bin/hw/android.hardware.security.keymint@3.0-service.trustkernel \
-    $(LXX521_TK_VENDOR)/bin/hw/android.hardware.gatekeeper-service.trustkernel:$(LXX521_RECOVERY_ROOT)/vendor/bin/hw/android.hardware.gatekeeper-service.trustkernel \
-    $(LXX521_TK_VENDOR)/lib64/libteec.so:$(LXX521_RECOVERY_ROOT)/vendor/lib64/libteec.so \
-    $(LXX521_TK_VENDOR)/lib64/libTEECommon.so:$(LXX521_RECOVERY_ROOT)/vendor/lib64/libTEECommon.so \
-    $(LXX521_TK_VENDOR)/lib64/libkeymint.so:$(LXX521_RECOVERY_ROOT)/vendor/lib64/libkeymint.so \
-    $(LXX521_TK_VENDOR)/lib64/libkeymint_tool.so:$(LXX521_RECOVERY_ROOT)/vendor/lib64/libkeymint_tool.so \
-    $(LXX521_TK_VENDOR)/lib64/lib_android_keymaster_keymint_utils.so:$(LXX521_RECOVERY_ROOT)/vendor/lib64/lib_android_keymaster_keymint_utils.so \
-    $(LXX521_TK_VENDOR)/lib64/libcppbor_external.so:$(LXX521_RECOVERY_ROOT)/vendor/lib64/libcppbor_external.so \
-    $(LXX521_TK_VENDOR)/lib64/libgatekeeper.so:$(LXX521_RECOVERY_ROOT)/vendor/lib64/libgatekeeper.so \
-    $(LXX521_TK_VENDOR)/lib64/android.hardware.security.keymint-V3-ndk.so:$(LXX521_RECOVERY_ROOT)/vendor/lib64/android.hardware.security.keymint-V3-ndk.so \
-    $(LXX521_TK_VENDOR)/lib64/android.hardware.security.rkp-V3-ndk.so:$(LXX521_RECOVERY_ROOT)/vendor/lib64/android.hardware.security.rkp-V3-ndk.so \
-    $(LXX521_TK_VENDOR)/lib64/android.hardware.security.sharedsecret-V1-ndk.so:$(LXX521_RECOVERY_ROOT)/vendor/lib64/android.hardware.security.sharedsecret-V1-ndk.so \
-    $(LXX521_TK_VENDOR)/lib64/android.hardware.security.secureclock-V1-ndk.so:$(LXX521_RECOVERY_ROOT)/vendor/lib64/android.hardware.security.secureclock-V1-ndk.so \
-    $(LXX521_TK_VENDOR)/lib64/android.hardware.gatekeeper-V1-ndk.so:$(LXX521_RECOVERY_ROOT)/vendor/lib64/android.hardware.gatekeeper-V1-ndk.so \
     $(LXX521_TK_VENDOR)/etc/vintf/manifest/android.hardware.security.keymint@3.0-service.trustkernel.xml:$(LXX521_RECOVERY_ROOT)/vendor/etc/vintf/manifest/android.hardware.security.keymint@3.0-service.trustkernel.xml \
     $(LXX521_TK_VENDOR)/etc/vintf/manifest/android.hardware.gatekeeper-service.trustkernel.xml:$(LXX521_RECOVERY_ROOT)/vendor/etc/vintf/manifest/android.hardware.gatekeeper-service.trustkernel.xml
 
-# Preserve the complete TrustKernel TA tree, including its data/ directory.
-PRODUCT_COPY_FILES += \
-    $(call find-copy-subdir-files,*,$(LXX521_TK_VENDOR)/app/t6,$(LXX521_RECOVERY_ROOT)/vendor/app/t6)
+PRODUCT_PACKAGES += \
+    lxx521_teed \
+    lxx521_keymint_service \
+    lxx521_gatekeeper_service \
+    lxx521_libteec \
+    lxx521_libteecommon \
+    lxx521_libkeymint \
+    lxx521_libkeymint_tool \
+    lxx521_lib_android_keymaster_keymint_utils \
+    lxx521_libcppbor_external \
+    lxx521_libgatekeeper \
+    lxx521_keymint_v3_ndk \
+    lxx521_rkp_v3_ndk \
+    lxx521_sharedsecret_v1_ndk \
+    lxx521_secureclock_v1_ndk \
+    lxx521_gatekeeper_v1_ndk \
+    lxx521_ta_2707 \
+    lxx521_ta_9ef77781 \
+    lxx521_ta_6f4d215d \
+    lxx521_ta_e97c270e \
+    lxx521_ta_1002 \
+    lxx521_ta_02662e8e \
+    lxx521_ta_b46325e6 \
+    lxx521_ta_1005 \
+    lxx521_ta_cfg \
+    lxx521_ta_data_77766b625f6372797074 \
+    lxx521_ta_data_6b6579626f785f6372797074
 
 # Platform libraries required by the prebuilt AIDL HAL executables.
 # Use libraries built by this recovery source; do NOT copy Android 15 system
