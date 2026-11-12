@@ -87,10 +87,10 @@ PRODUCT_PACKAGES += \
 # -----------------------------------------------------------------------------
 # LXX521 TrustKernel recovery integration
 #
-# ELF executables and shared libraries are declared in prebuilt/recovery/Android.bp
-# as cc_prebuilt_binary / cc_prebuilt_library_shared modules. Do NOT add ELF files
-# to PRODUCT_COPY_FILES: the build's check-non-elf target rejects that.
-# The non-ELF T6 payloads are declared as ETC prebuilts in prebuilt/recovery/Android.mk.
+# ELF executables and shared libraries, plus the T6 payloads, are declared as
+# BUILD_PREBUILT modules in prebuilt/recovery/Android.mk. Their LOCAL_MODULE_PATH
+# installs them directly under $(TARGET_RECOVERY_ROOT_OUT)/vendor/...
+# Do NOT add ELF files to PRODUCT_COPY_FILES: check-non-elf rejects that.
 # -----------------------------------------------------------------------------
 LXX521_RECOVERY_ROOT := $(TARGET_COPY_OUT_RECOVERY)/root
 LXX521_TK_VENDOR := $(DEVICE_PATH)/prebuilt/recovery/vendor
