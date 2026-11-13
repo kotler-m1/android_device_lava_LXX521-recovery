@@ -50,16 +50,12 @@ TARGET_NO_BOOTLOADER := true
 # Resolution
 TARGET_SCREEN_HEIGHT := 2400
 TARGET_SCREEN_WIDTH := 1080
-
-# Display
 TARGET_SCREEN_DENSITY := 480
-
-
 
 # Kernel
 TARGET_KERNEL_ARCH := arm64
-BOARD_RAMDISK_USE_LZ4 := true
 TARGET_KERNEL_HEADER_ARCH := arm64
+BOARD_RAMDISK_USE_LZ4 := true
 BOARD_BOOT_HEADER_VERSION := 4
 BOARD_INIT_BOOT_HEADER_VERSION := 4
 BOARD_INCLUDE_DTB_IN_BOOTIMG := true
@@ -71,7 +67,6 @@ BOARD_PAGE_SIZE := 4096
 BOARD_KERNEL_OFFSET := 0x00008000
 BOARD_RAMDISK_OFFSET := 0x26F08000
 BOARD_TAGS_OFFSET := 0x07C88000
-BOARD_BOOT_HEADER_VERSION := 4
 BOARD_DTB_SIZE := 327372
 BOARD_DTB_OFFSET := 0x07C88000
 BOARD_VENDOR_CMDLINE := bootopt=64S3,32N2,64N2
@@ -93,7 +88,6 @@ BOARD_PREBUILT_DTBIMAGE_DIR := $(DEVICE_PATH)/prebuilt/dtb
 BOARD_PREBUILT_VENDOR_RAMDISK := \
     $(DEVICE_PATH)/prebuilt/stock_ramdisk.cpio.lz4
 
-
 # ============================================================
 # vendor_dlkm modules
 # ============================================================
@@ -105,7 +99,6 @@ BOARD_VENDOR_KERNEL_MODULES := \
     $(sort $(addprefix $(KERNEL_PATH)/modules/vendor_dlkm/, \
     $(notdir $(BOARD_VENDOR_KERNEL_MODULES_LOAD))))
 
-
 # ============================================================
 # Vendor boot modules
 #
@@ -115,7 +108,6 @@ BOARD_VENDOR_KERNEL_MODULES := \
 
 BOARD_VENDOR_RAMDISK_KERNEL_MODULES_LOAD :=
 BOARD_VENDOR_RAMDISK_KERNEL_MODULES :=
-
 
 # ============================================================
 # Recovery-only modules
@@ -129,10 +121,8 @@ BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES := \
     $(addprefix $(KERNEL_PATH)/modules/vendor_boot/, \
     $(notdir $(BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES_LOAD)))
 
-
-
 # Partitions
-BOARD_FLASH_BLOCK_SIZE := 262144 # (BOARD_KERNEL_PAGESIZE * 64)
+BOARD_FLASH_BLOCK_SIZE := 262144
 BOARD_BOOTIMAGE_PARTITION_SIZE := 67108864
 BOARD_VENDOR_BOOTIMAGE_PARTITION_SIZE := 67108864
 BOARD_HAS_LARGE_FILESYSTEM := true
@@ -160,9 +150,6 @@ TARGET_USERIMAGES_USE_EXT4 := true
 TARGET_USERIMAGES_USE_F2FS := true
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/recovery/root/recovery.fstab
 
-# Security patch level
-VENDOR_SECURITY_PATCH := 2021-08-01
-
 # Verified Boot
 BOARD_AVB_ENABLE := true
 BOARD_AVB_MAKE_VBMETA_IMAGE_ARGS += --flags 3
@@ -175,9 +162,6 @@ PLATFORM_VERSION := 16.1.0
 # ============================================================
 # Encryption / FBE
 # ============================================================
-# LXX521 stock Android 15 userdata uses F2FS and fscrypt/FBE v2.
-# TW_INCLUDE_CRYPTO enables the recovery crypto implementation. Keep the
-# explicit FBE options for this Android 12.1-based recovery configuration.
 
 TW_INCLUDE_CRYPTO := true
 TW_INCLUDE_CRYPTO_FBE := true
@@ -187,7 +171,6 @@ TW_USE_FSCRYPT_POLICY := 2
 BOARD_USES_METADATA_PARTITION := true
 BOARD_ROOT_EXTRA_FOLDERS += metadata
 TW_PREPARE_DATA_MEDIA_EARLY := true
-
 
 # TWRP Configuration
 TW_THEME := portrait_hdpi
@@ -201,7 +184,6 @@ TW_INCLUDE_REPACKTOOLS := true
 TW_DEFAULT_BRIGHTNESS := 1300
 TW_MAX_BRIGHTNESS := 1800
 TW_NO_SCREEN_BLANK := true
-TW_SCREEN_BLANK_ON_BOOT := true
 TW_CUSTOM_BATTERY_PATH := "/sys/class/power_supply/battery"
 TW_Y_OFFSET := 95
 TW_H_OFFSET := -95
@@ -209,41 +191,37 @@ TW_H_OFFSET := -95
 # include python, for ABX conversion
 TW_INCLUDE_PYTHON := true
 
-# Modules
-TW_LOAD_VENDOR_MODULES_EXCLUDE_GKI := true
-# The first four modules are the existing display/touch modules in the recovery
-# ramdisk. The TrustKernel modules are requested from the stock vendor_boot
-# module directory because TW_LOAD_VENDOR_BOOT_MODULES is enabled below.
-TW_LOAD_VENDOR_MODULES := $(strip \
-    $(notdir $(wildcard $(DEVICE_PATH)/recovery/root/vendor/lib/modules/*.ko)) \
-    ffa_v10.ko \
-    teeperf.ko \
-    tkcore.ko \
-    tkcore_drv.ko \
-    rpmb.ko \
-    rpmb-mtk.ko \
-    ufs-mediatek-mod.ko \
-    ufs-mediatek-dbg.ko \
-    blocktag.ko \
-    irq-dbg.ko \
-    mrdump.ko \
-    aee_aed.ko)
+# ============================================================
+# Vendor modules
+#
+# FIX A: TW_LOAD_VENDOR_MODULES is intentionally NOT set.
+# The .ko files still land in the recovery ramdisk via
+# BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES and the recovery/root tree,
+# but they are loaded explicitly via insmod from
+# init.recovery.trustkernel.rc (in early-init), giving deterministic
+# ordering for the TrustKernel TEE stack:
+#   teeperf -> tkcore -> tkcore_drv -> rpmb -> ffa_v10
+#
+# Rationale: on twrp-12.1, bootable/recovery/Android.mk pastes
+# TW_LOAD_VENDOR_MODULES into -D... without outer quoting, so the
+# space-separated .ko list breaks clang++ argument parsing
+# ("clang++: error: no such file or directory: 'i2c-mt65xx.ko'").
+# Removing the variable avoids the bug without touching TWRP source.
+# ============================================================
+
+# TW_LOAD_VENDOR_MODULES_EXCLUDE_GKI := true
+# TW_LOAD_VENDOR_MODULES := ...
+# TW_LOAD_VENDOR_BOOT_MODULES := true
 
 # Vendor_boot recovery ramdisk
 BOARD_USES_RECOVERY_AS_BOOT := false
-BOARD_USES_GENERIC_KERNEL_IMAGE := true
 BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT := true
 BOARD_EXCLUDE_KERNEL_FROM_RECOVERY_IMAGE :=
 BOARD_MOVE_GSI_AVB_KEYS_TO_VENDOR_BOOT :=
-TW_LOAD_VENDOR_BOOT_MODULES := true
 BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT := true
-
-
 
 # ADB
 TW_INCLUDE_ADB := true
 TW_INCLUDE_FASTBOOTD := true
 TWRP_INCLUDE_LOGCAT := true
 TWRP_USES_LOGD := true
-
-
