@@ -99,20 +99,27 @@ BOARD_VENDOR_KERNEL_MODULES := \
     $(sort $(addprefix $(KERNEL_PATH)/modules/vendor_dlkm/, \
     $(notdir $(BOARD_VENDOR_KERNEL_MODULES_LOAD))))
 
-# Vendor boot modules
-# Already included in the prebuilt stock vendor ramdisk.
-# Do NOT add them again to the generated ramdisk.
+
+# Vendor / Recovery RAMDISK MODULES
+# Stock modules already exist in the prebuilt PLATFORM fragment.
+
+# Stock vendor ramdisk modules
 BOARD_VENDOR_RAMDISK_KERNEL_MODULES_LOAD :=
 BOARD_VENDOR_RAMDISK_KERNEL_MODULES :=
 
-# Recovery-only modules
-BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES_LOAD := \
-    $(strip $(shell cat \
-    $(KERNEL_PATH)/modules/modules.load))
+# Preserve the stock recovery module loading configuration.
+# Do not generate a second modules.load.recovery file.
 
-BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES := \
-    $(addprefix $(KERNEL_PATH)/modules/vendor_boot/, \
-    $(notdir $(BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES_LOAD)))
+BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES_LOAD :=
+
+# Previous custom recovery module configuration (kept for reference).
+# BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES_LOAD := \
+#     $(strip $(shell cat \
+#     $(KERNEL_PATH)/modules/modules.load.recovery))
+#
+# BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES := \
+#     $(addprefix $(KERNEL_PATH)/modules/vendor_boot/, \
+#     $(notdir $(BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES_LOAD)))
 
 # Partitions
 BOARD_FLASH_BLOCK_SIZE := 262144
@@ -130,8 +137,11 @@ BOARD_LAVA_DYNAMIC_PARTITIONS_SIZE := 4844463520
 
 
 # PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS := false
-TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilt/kernel
-BOARD_KERNEL_IMAGE_NAME := kernel
+
+# Duplicate kernel definitions (originally present).
+# The active kernel definitions are above.
+# TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilt/kernel
+# BOARD_KERNEL_IMAGE_NAME := kernel
 
 
 # Properties
@@ -153,7 +163,7 @@ TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/recovery/root/recovery.fstab
 BOARD_AVB_ENABLE := true
 BOARD_AVB_MAKE_VBMETA_IMAGE_ARGS += --flags 3
 
-# Stock latest security patch levels
+# Stock security patch levels
 PLATFORM_SECURITY_PATCH := 2026-08-05
 VENDOR_SECURITY_PATCH := 2025-04-05
 PLATFORM_VERSION := 16.1.0
@@ -183,21 +193,25 @@ TW_CUSTOM_BATTERY_PATH := "/sys/class/power_supply/battery"
 TW_Y_OFFSET := 95
 TW_H_OFFSET := -95
 
-# include python, for ABX conversion
+# Include python, for ABX conversion
 TW_INCLUDE_PYTHON := true
 
-#Aggressive Size Reduction
-FOX_DRASTIC_SIZE_REDUCTION := 1
-FOX_EXTREME_SIZE_REDUCTION := 1
 
-#Remove Other Bloat
-FOX_REMOVE_AAPT := 1
-#FOX_REMOVE_BASH := 1
-#FOX_REMOVE_ZIP_BINARY := 1
+# OrangeFox Size Reduction
+# FOX_DRASTIC_SIZE_REDUCTION := 1
+# FOX_EXTREME_SIZE_REDUCTION := 1
 
-#Language Setting (English Only)
+# FOX_REMOVE_AAPT := 1
+
+# FOX_REMOVE_BASH := 1
+# FOX_REMOVE_ZIP_BINARY := 1
+
+
+# Language Setting (English Only)
 TW_EXTRA_LANGUAGES := false
 TW_DEFAULT_LANGUAGE := en-US
+
+# Optional vendor module configuration
 
 # TW_LOAD_VENDOR_MODULES_EXCLUDE_GKI := true
 # TW_LOAD_VENDOR_MODULES := ...
