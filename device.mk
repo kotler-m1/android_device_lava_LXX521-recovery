@@ -1,3 +1,4 @@
+
 DEVICE_PATH := device/lava/lxx521
 
 # API
@@ -52,7 +53,7 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES_DEBUG += \
     bootctrl
 
-# Dynamic
+# Dynamic Partitions
 PRODUCT_USE_DYNAMIC_PARTITIONS := true
 
 # DRM
@@ -69,22 +70,25 @@ PRODUCT_PACKAGES += \
     mtk_plpath_utils \
     mtk_plpath_utils.recovery
 
-# HIDL Service
+# VINTF
 PRODUCT_ENFORCE_VINTF_MANIFEST := true
 
-# Recovery init
+# Recovery Init
 PRODUCT_PACKAGES += \
     init.recovery.mt6878.rc
-# Filesystem table
-PRODUCT_PACKAGES += \
-    recovery.fstab \
 
-# fastbootd
+# Recovery Filesystem Table
+PRODUCT_PACKAGES += \
+    recovery.fstab
+
+# Fastbootd
 PRODUCT_PACKAGES += \
     fastbootd
 
+
 # ============================================================
-# LXX521 TrustKernel recovery integration
+# LXX521 TrustKernel Recovery Integration
+# MT6878 / TrustKernel TEE / KeyMint 3.0 AIDL
 # ============================================================
 
 LXX521_RECOVERY_ROOT := $(TARGET_COPY_OUT_RECOVERY)/root
@@ -96,7 +100,7 @@ PRODUCT_COPY_FILES += \
     $(LXX521_TK_VENDOR)/etc/vintf/manifest/android.hardware.security.keymint@3.0-service.trustkernel.xml:$(LXX521_RECOVERY_ROOT)/vendor/etc/vintf/manifest/android.hardware.security.keymint@3.0-service.trustkernel.xml \
     $(LXX521_TK_VENDOR)/etc/vintf/manifest/android.hardware.gatekeeper-service.trustkernel.xml:$(LXX521_RECOVERY_ROOT)/vendor/etc/vintf/manifest/android.hardware.gatekeeper-service.trustkernel.xml
 
-# TrustKernel executables, shared libraries and T6 applications
+# TrustKernel executables, libraries and T6 applications
 PRODUCT_PACKAGES += \
     lxx521_teed \
     lxx521_keymint_service \
@@ -125,7 +129,10 @@ PRODUCT_PACKAGES += \
     lxx521_ta_data_77766b625f6372797074 \
     lxx521_ta_data_6b6579626f785f6372797074
 
-# Android libraries required by the AIDL HALs
+# ============================================================
+# Recovery Libraries for TrustKernel AIDL HALs
+# ============================================================
+
 TARGET_RECOVERY_DEVICE_MODULES += \
     libbinder_ndk \
     libbinder \
@@ -135,7 +142,9 @@ TARGET_RECOVERY_DEVICE_MODULES += \
     libhardware \
     libkeymaster_messages \
     libkeymaster_portable \
-    libpuresoftkeymasterdevice
+    libpuresoftkeymasterdevice \
+    libcppcose_rkp \
+    libsoft_attestation_cert
 
 RECOVERY_LIBRARY_SOURCE_FILES += \
     $(TARGET_OUT_SHARED_LIBRARIES)/libbinder_ndk.so \
@@ -146,7 +155,13 @@ RECOVERY_LIBRARY_SOURCE_FILES += \
     $(TARGET_OUT_SHARED_LIBRARIES)/libhardware.so \
     $(TARGET_OUT_SHARED_LIBRARIES)/libkeymaster_messages.so \
     $(TARGET_OUT_SHARED_LIBRARIES)/libkeymaster_portable.so \
-    $(TARGET_OUT_SHARED_LIBRARIES)/libpuresoftkeymasterdevice.so
+    $(TARGET_OUT_SHARED_LIBRARIES)/libpuresoftkeymasterdevice.so \
+    $(TARGET_OUT_SHARED_LIBRARIES)/libcppcose_rkp.so \
+    $(TARGET_OUT_SHARED_LIBRARIES)/libsoft_attestation_cert.so
+
+# Do not package generic HIDL Gatekeeper or legacy Keymaster 4.x
+# services. LXX521 uses TrustKernel KeyMint 3.0 and AIDL Gatekeeper.
+
 
 # Rootdir
 PRODUCT_PACKAGES += \
