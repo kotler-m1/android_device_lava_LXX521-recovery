@@ -1,47 +1,87 @@
+# ==========================================================
 # LAVA LXX521 - TrustKernel Recovery Integration
 # MT6878 / KeyMint 3.0 AIDL / Gatekeeper AIDL
+# ==========================================================
 
 on init
+    # Mount points must exist before post-fs mount actions.
+    mkdir /vendor 0755 root root
+
+    mkdir /mnt/vendor 0755 root root
+    mkdir /mnt/vendor/persist 0770 system system
+    mkdir /mnt/vendor/protect_f 0770 system system
+
+    # Temporary TrustKernel runtime paths avoid a circular dependency on
+    # encrypted /data being mounted before the TEE can start.
     mkdir /mnt/twrp_t6 0770 system system
     mkdir /mnt/twrp_t6/fs 0770 system system
     mkdir /mnt/twrp_t6/app 0770 system system
     mkdir /mnt/twrp_t6/log 0770 system system
 
-on post-fs
-    # Persistent partitions are defined in recovery.fstab.
-    # They must be mounted before initializing the TEE.
+# ==========================================================
+# MOUNT REQUIRED PARTITIONS BEFORE TEE INITIALIZATION
+# ==========================================================
 
+on post-fs
+    # Wait for the active logical vendor partition and mount stock vendor.
+    wait /dev/block/by-name/vendor 10
+    mount erofs /dev/block/by-name/vendor /vendor ro
+
+    # Mount the original persistent TrustKernel storage.
+    wait /dev/block/by-name/persist 10
+    mount ext4 /dev/block/by-name/persist /mnt/vendor/persist
+
+    # Mount the original protected TrustKernel storage.
+    wait /dev/block/by-name/protect1 10
+    mount ext4 /dev/block/by-name/protect1 /mnt/vendor/protect_f
+
+    # Ensure stock vendor executables and TA files are available.
+    wait /vendor/bin/teed 10
+    wait /vendor/bin/hw/android.hardware.security.keymint@3.0-service.trustkernel 10
+    wait /vendor/bin/hw/android.hardware.gatekeeper-service.trustkernel 10
+
+    # Wait for TrustKernel and RPMB device nodes.
+    wait /dev/tkcore_admin 10
+    wait /dev/rpmb0 10
+
+    # Prepare persistent TEE paths AFTER parent partitions are mounted.
     mkdir /mnt/vendor/persist/t6 0770 system system
     mkdir /mnt/vendor/protect_f/tee 0770 system system
 
     chown system system /mnt/vendor/persist/t6
     chown system system /mnt/vendor/protect_f/tee
 
-    wait /dev/tkcore_admin 10
-    wait /dev/tkcore_client 10
-    wait /dev/rpmb0 10
+    restorecon /mnt/vendor/persist/t6
+    restorecon /mnt/vendor/protect_f/tee
 
+    # Configure TrustKernel admin device for teed (runs as system).
     chmod 0600 /dev/tkcore_admin
     chown system system /dev/tkcore_admin
 
-    chmod 0660 /dev/tkcore_client
-    chown root system /dev/tkcore_client
+    # /dev/rpmb0 was observed as root:system 0660 on this device.
+    # Keep its existing ueventd permissions; no chmod/chown is required.
+    # chmod 0660 /dev/rpmb0
+    # chown root system /dev/rpmb0
 
-    chmod 0660 /dev/rpmb0
-    chown root system /dev/rpmb0
-
+    # Recovery uses temporary T6 paths, so do not wait for /data/vendor/t6.
     setprop vendor.trustkernel.fs.mode 3
-    setprop vendor.trustkernel.fs.state ready
-    setprop vendor.trustkernel.log.state ready
 
+    # Start TEE daemon only after vendor, persist, protect and device nodes exist.
     start teed
+
+# ==========================================================
+# TRUSTKERNEL TEE DAEMON
+# ==========================================================
+
+# Stock firmware also lists /dev/mmcblk0rpmb, but this recovery does not expose
+# that node. Keep the original argument as a comment and use the verified node.
+# --rpmbdev /dev/mmcblk0rpmb \
 
 service teed /vendor/bin/teed \
     --tzdev /dev/tkcore_admin \
     --datapath /mnt/twrp_t6/fs \
     --sptapath /mnt/twrp_t6/app \
     --systapath /vendor/app/t6 \
-    --rpmbdev /dev/mmcblk0rpmb \
     --rpmbdev /dev/rpmb0 \
     --prot /mnt/vendor/persist/t6 \
     --prot /mnt/vendor/protect_f/tee \
@@ -54,11 +94,19 @@ service teed /vendor/bin/teed \
     capabilities SYS_RAWIO
     disabled
 
+# ==========================================================
+# START KEYMINT AFTER TEE PROCESS STARTS
+# ==========================================================
+
 service vendor.keymint-3-0-trustkernel /vendor/bin/hw/android.hardware.security.keymint@3.0-service.trustkernel
-    class hal
+    class early_hal
     user system
     group system
     disabled
+
+# ==========================================================
+# GATEKEEPER
+# ==========================================================
 
 service vendor.gatekeeper /vendor/bin/hw/android.hardware.gatekeeper-service.trustkernel
     class hal
@@ -66,6 +114,12 @@ service vendor.gatekeeper /vendor/bin/hw/android.hardware.gatekeeper-service.tru
     group system
     disabled
 
+# ==========================================================
+# SERVICE STARTUP SEQUENCE
+# ==========================================================
+
+# init.svc.teed=running confirms the daemon process started. It does not by
+# itself prove that all TEE operations are ready; verify teed and KeyMint logs.
 on property:init.svc.teed=running
     setprop vendor.trustkernel.ready true
 
