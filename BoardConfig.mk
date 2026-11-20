@@ -18,6 +18,7 @@ AB_OTA_PARTITIONS += \
     odm \
     system \
     boot \
+    vendor_boot \
     vbmeta_system \
     odm_dlkm \
     product \
@@ -84,7 +85,17 @@ TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilt/kernel
 BOARD_PREBUILT_DTBOIMAGE := $(DEVICE_PATH)/prebuilt/dtbo.img
 BOARD_PREBUILT_DTBIMAGE_DIR := $(DEVICE_PATH)/prebuilt/dtb
 
-# Stock vendor ramdisk
+# ==========================================================
+# Stock vendor PLATFORM ramdisk
+#
+# Keep this active. AOSP uses this file as the default unnamed
+# PLATFORM ramdisk (--vendor_ramdisk), not as a named fragment.
+# Do NOT add "stock" to BOARD_VENDOR_RAMDISK_FRAGMENTS; doing so
+# creates a separate named stock.cpio fragment.
+#
+# This prebuilt REPLACES the generated default vendor ramdisk.
+# It does not merge the generated small ramdisk with this file.
+# ==========================================================
 BOARD_PREBUILT_VENDOR_RAMDISK := \
     $(DEVICE_PATH)/prebuilt/stock_ramdisk.cpio.lz4
 
@@ -96,34 +107,36 @@ BOARD_VENDOR_KERNEL_MODULES := \
     $(sort $(addprefix $(KERNEL_PATH)/modules/vendor_dlkm/, \
     $(notdir $(BOARD_VENDOR_KERNEL_MODULES_LOAD))))
 
-
 # Vendor / Recovery RAMDISK MODULES
-# Stock modules already exist in the prebuilt PLATFORM fragment.
+# Stock modules already exist in the prebuilt PLATFORM ramdisk above.
 
 # Stock vendor ramdisk modules
 BOARD_VENDOR_RAMDISK_KERNEL_MODULES_LOAD :=
 BOARD_VENDOR_RAMDISK_KERNEL_MODULES :=
 
-# Preserve the stock recovery module loading configuration.
-# Do not generate a second modules.load.recovery file.
-BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES_LOAD := \
-    $(strip $(shell cat \
-    $(KERNEL_PATH)/modules/modules.load.recovery))
+# Preserve the stock modules.load.recovery already present in the prebuilt.
+# Leave empty to prevent AOSP from generating a competing modules.load.recovery.
+BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES_LOAD :=
 
-BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES := \
-    $(addprefix $(KERNEL_PATH)/modules/vendor_boot/, \
-    $(notdir $(BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES_LOAD)))
-
-
+# This variable is not used by the supplied AOSP build/make/core/Makefile
+# path for generating modules.load.recovery. Preserve as a commented reference.
+# BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES :=
 
 # Partitions
 BOARD_FLASH_BLOCK_SIZE := 262144
 BOARD_BOOTIMAGE_PARTITION_SIZE := 67108864
 BOARD_VENDOR_BOOTIMAGE_PARTITION_SIZE := 67108864
 BOARD_HAS_LARGE_FILESYSTEM := true
+
+# Preserve the existing system filesystem selection.
+# BOARD_SYSTEMIMAGE_PARTITION_TYPE is retained for this tree's existing config.
+# The standard AOSP variable below is what device.mk uses for OTA postinstall.
+# Verify stock system_a before changing ext4 to erofs (or vice versa).
 BOARD_SYSTEMIMAGE_PARTITION_TYPE := ext4
+BOARD_SYSTEMIMAGE_FILE_SYSTEM_TYPE := $(BOARD_SYSTEMIMAGE_PARTITION_TYPE)
+
 BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := f2fs
-BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := ext4
+BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := erofs
 TARGET_COPY_OUT_VENDOR := vendor
 BOARD_SUPER_PARTITION_SIZE := 4844463520
 BOARD_SUPER_PARTITION_GROUPS := lava_dynamic_partitions
@@ -215,12 +228,13 @@ TW_DEFAULT_LANGUAGE := en-US
 # Vendor_boot recovery ramdisk
 BOARD_USES_RECOVERY_AS_BOOT := false
 BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT := true
-BOARD_EXCLUDE_KERNEL_FROM_RECOVERY_IMAGE :=
-BOARD_MOVE_GSI_AVB_KEYS_TO_VENDOR_BOOT :=
+# Empty assignments have no useful effect; retain as comments.
+# BOARD_EXCLUDE_KERNEL_FROM_RECOVERY_IMAGE :=
+# BOARD_MOVE_GSI_AVB_KEYS_TO_VENDOR_BOOT :=
 BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT := true
 
 # ADB
 TW_INCLUDE_ADB := true
 TW_INCLUDE_FASTBOOTD := true
 TWRP_INCLUDE_LOGCAT := true
-TWRP_USES_LOGD := true
+TARGET_USES_LOGD := true
