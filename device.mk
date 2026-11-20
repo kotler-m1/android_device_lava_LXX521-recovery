@@ -1,4 +1,3 @@
-
 DEVICE_PATH := device/lava/lxx521
 
 # API
@@ -6,13 +5,16 @@ PRODUCT_SHIPPING_API_LEVEL := 32
 PRODUCT_TARGET_VNDK_VERSION := 34
 
 # A/B
-AB_OTA_UPDATER := true
-AB_OTA_PARTITIONS += \
-    boot \
-    product \
-    system \
-    system_ext \
-    vendor
+# The complete AB_OTA_UPDATER / AB_OTA_PARTITIONS list is maintained
+# in BoardConfig.mk for this tree. Keep this older duplicate block commented
+# so it does not append a second, incomplete partition list.
+# AB_OTA_UPDATER := true
+# AB_OTA_PARTITIONS += \
+#     boot \
+#     product \
+#     system \
+#     system_ext \
+#     vendor
 
 PRODUCT_PACKAGES += \
     update_engine \
@@ -96,42 +98,56 @@ LXX521_TK_VENDOR := $(DEVICE_PATH)/prebuilt/recovery/vendor
 
 # Recovery init and TrustKernel VINTF manifests
 PRODUCT_COPY_FILES += \
-    $(DEVICE_PATH)/recovery/root/init.recovery.trustkernel.rc:$(LXX521_RECOVERY_ROOT)/init.recovery.trustkernel.rc \
-    $(LXX521_TK_VENDOR)/etc/vintf/manifest/android.hardware.security.keymint@3.0-service.trustkernel.xml:$(LXX521_RECOVERY_ROOT)/vendor/etc/vintf/manifest/android.hardware.security.keymint@3.0-service.trustkernel.xml \
-    $(LXX521_TK_VENDOR)/etc/vintf/manifest/android.hardware.gatekeeper-service.trustkernel.xml:$(LXX521_RECOVERY_ROOT)/vendor/etc/vintf/manifest/android.hardware.gatekeeper-service.trustkernel.xml
+    $(DEVICE_PATH)/recovery/root/init.recovery.trustkernel.rc:$(LXX521_RECOVERY_ROOT)/init.recovery.trustkernel.rc
+
+# These VINTF copies are intentionally commented out:
+# the actual stock vendor partition contains both manifests, and the recovery
+# init file mounts that stock vendor partition at /vendor. Files copied under
+# the recovery ramdisk's /vendor would be hidden by that mount.
+# $(LXX521_TK_VENDOR)/etc/vintf/manifest/android.hardware.security.keymint@3.0-service.trustkernel.xml:$(LXX521_RECOVERY_ROOT)/vendor/etc/vintf/manifest/android.hardware.security.keymint@3.0-service.trustkernel.xml
+# $(LXX521_TK_VENDOR)/etc/vintf/manifest/android.hardware.gatekeeper-service.trustkernel.xml:$(LXX521_RECOVERY_ROOT)/vendor/etc/vintf/manifest/android.hardware.gatekeeper-service.trustkernel.xml
 
 # TrustKernel executables, libraries and T6 applications
-PRODUCT_PACKAGES += \
-    lxx521_teed \
-    lxx521_keymint_service \
-    lxx521_gatekeeper_service \
-    lxx521_libteec \
-    lxx521_libteecommon \
-    lxx521_libkeymint \
-    lxx521_libkeymint_tool \
-    lxx521_lib_android_keymaster_keymint_utils \
-    lxx521_libcppbor_external \
-    lxx521_libgatekeeper \
-    lxx521_keymint_v3_ndk \
-    lxx521_rkp_v3_ndk \
-    lxx521_sharedsecret_v1_ndk \
-    lxx521_secureclock_v1_ndk \
-    lxx521_gatekeeper_v1_ndk \
-    lxx521_ta_2707 \
-    lxx521_ta_9ef77781 \
-    lxx521_ta_6f4d215d \
-    lxx521_ta_e97c270e \
-    lxx521_ta_1002 \
-    lxx521_ta_02662e8e \
-    lxx521_ta_b46325e6 \
-    lxx521_ta_1005 \
-    lxx521_ta_cfg \
-    lxx521_ta_data_77766b625f6372797074 \
-    lxx521_ta_data_6b6579626f785f6372797074
+#
+# The stock vendor partition mounted at /vendor already supplies these files.
+# Keep these prebuilt module declarations commented while using the real vendor
+# mount; modules installed below the recovery ramdisk's /vendor are shadowed by
+# the mounted stock vendor. Preserve the complete original list here in case
+# the tree later switches to a self-contained recovery vendor overlay.
+# PRODUCT_PACKAGES += \
+#     lxx521_teed \
+#     lxx521_keymint_service \
+#     lxx521_gatekeeper_service \
+#     lxx521_libteec \
+#     lxx521_libteecommon \
+#     lxx521_libkeymint \
+#     lxx521_libkeymint_tool \
+#     lxx521_lib_android_keymaster_keymint_utils \
+#     lxx521_libcppbor_external \
+#     lxx521_libgatekeeper \
+#     lxx521_keymint_v3_ndk \
+#     lxx521_rkp_v3_ndk \
+#     lxx521_sharedsecret_v1_ndk \
+#     lxx521_secureclock_v1_ndk \
+#     lxx521_gatekeeper_v1_ndk \
+#     lxx521_ta_2707 \
+#     lxx521_ta_9ef77781 \
+#     lxx521_ta_6f4d215d \
+#     lxx521_ta_e97c270e \
+#     lxx521_ta_1002 \
+#     lxx521_ta_02662e8e \
+#     lxx521_ta_b46325e6 \
+#     lxx521_ta_1005 \
+#     lxx521_ta_cfg \
+#     lxx521_ta_data_77766b625f6372797074 \
+#     lxx521_ta_data_6b6579626f785f6372797074
 
 # ============================================================
 # Recovery Libraries for TrustKernel AIDL HALs
 # ============================================================
+# Keep these recovery library entries. They supply system-side linker
+# dependencies to the recovery environment; the stock vendor mount supplies
+# vendor-side libraries such as libteec.so and libTEECommon.so.
 
 TARGET_RECOVERY_DEVICE_MODULES += \
     libbinder_ndk \
