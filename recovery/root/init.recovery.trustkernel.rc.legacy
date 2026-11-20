@@ -1,0 +1,146 @@
+# LAVA LXX521 (MT6878) - TrustKernel TEE / KeyMint AIDL 3.0 / Gatekeeper AIDL 1.0
+# Recovery adaptation of the stock Android 15 TrustKernel startup.
+# EXPERIMENTAL: verify on-device before relying on FBE decryption.
+
+# ---------------------------------------------------------------------------
+# FIX A — module loading via insmod (replaces TW_LOAD_VENDOR_MODULES)
+#
+# Trustonic TEE requires strict ordering:
+#   teeperf -> tkcore -> tkcore_drv  (must be before rpmb and ffa_v10)
+# ---------------------------------------------------------------------------
+on early-init
+    # Storage foundation
+    insmod /vendor/lib/modules/ufs-mediatek-mod.ko
+    insmod /vendor/lib/modules/ufs-mediatek-dbg.ko
+    insmod /vendor/lib/modules/blocktag.ko
+
+    # Trustonic TEE - strict order, do not reorder
+    insmod /vendor/lib/modules/teeperf.ko
+    insmod /vendor/lib/modules/tkcore.ko
+    insmod /vendor/lib/modules/tkcore_drv.ko
+
+    # RPMB / TrustZone
+    insmod /vendor/lib/modules/rpmb.ko
+    insmod /vendor/lib/modules/rpmb-mtk.ko
+    insmod /vendor/lib/modules/ffa_v10.ko
+
+    # Display / touch (TWRP UI needs these)
+    insmod /vendor/lib/modules/focaltech_tp.ko
+    insmod /vendor/lib/modules/i2c-mt65xx.ko
+    insmod /vendor/lib/modules/mtk_disp_notify.ko
+    insmod /vendor/lib/modules/mtk_panel_ext.ko
+
+    # Debug / crash
+    insmod /vendor/lib/modules/irq-dbg.ko
+    insmod /vendor/lib/modules/mrdump.ko
+    insmod /vendor/lib/modules/aee_aed.ko
+
+# ---------------------------------------------------------------------------
+# Persistent TEE state — these partitions are unencrypted
+# ---------------------------------------------------------------------------
+on init
+    mkdir /mnt/vendor 0755 root root
+    mkdir /mnt/vendor/persist 0750 system system
+    mkdir /mnt/vendor/protect_f 0750 system system
+
+on post-fs
+    wait /dev/block/by-name/persist 10
+    wait /dev/block/by-name/protect1 10
+
+    mount ext4 /dev/block/by-name/persist /mnt/vendor/persist rw noatime,nosuid,nodev,noauto_da_alloc,commit=1,nodelalloc
+    mount ext4 /dev/block/by-name/protect1 /mnt/vendor/protect_f rw noatime,nosuid,nodev,noauto_da_alloc,commit=1,nodelalloc
+
+    restorecon /mnt/vendor/persist
+    restorecon /mnt/vendor/protect_f
+
+    mkdir /mnt/vendor/persist/t6 0770 system system
+    chown system system /mnt/vendor/persist/t6
+    restorecon /mnt/vendor/persist/t6
+
+    mkdir /mnt/vendor/protect_f/tee 0770 system system
+    chown system system /mnt/vendor/protect_f/tee
+    restorecon /mnt/vendor/protect_f/tee
+
+    # These nodes are created by the tkcore / rpmb modules we just loaded
+    wait /dev/tkcore_admin 10
+    wait /dev/tkcore_client 10
+    wait /dev/rpmb0 10
+
+    chmod 0600 /dev/tkcore_admin
+    chown system system /dev/tkcore_admin
+    chmod 0660 /dev/tkcore_client
+    chown root system /dev/tkcore_client
+    chmod 0660 /dev/rpmb0
+    chown root system /dev/rpmb0
+
+    setprop vendor.trustkernel.fs.mode 3
+    setprop vendor.trustkernel.fs.state prepare
+
+    # teed only strictly needs /persist and /protect_f to start.
+    # /data/vendor/t6 is runtime cache — tolerated as missing.
+    start teed
+
+# ---------------------------------------------------------------------------
+# FIX: post-fs-data does NOT fire in recovery.
+# Create /data/vendor/t6 once TWRP has actually mounted /data
+# (i.e. after vold triggers the framework restart).
+# ---------------------------------------------------------------------------
+on property:vold.decrypt=trigger_restart_framework
+    mkdir /data/vendor 0770 system system
+    mkdir /data/vendor/t6 0770 system system
+    chown system system /data/vendor/t6
+    mkdir /data/vendor/t6/fs 0770 system system
+    chown system system /data/vendor/t6/fs
+    mkdir /data/vendor/t6/app 0770 system system
+    chown system system /data/vendor/t6/app
+    restorecon /data/vendor/t6
+    restorecon /data/vendor/t6/fs
+    restorecon /data/vendor/t6/app
+    setprop vendor.trustkernel.fs.state ready
+
+# ---------------------------------------------------------------------------
+# Fallback: publish vendor.trustkernel.ready if teed doesn't do it itself
+# so KeyMint and Gatekeeper still start.
+# ---------------------------------------------------------------------------
+on property:init.svc.teed=running
+    setprop vendor.trustkernel.ready true
+
+# ---------------------------------------------------------------------------
+# Services
+# ---------------------------------------------------------------------------
+service teed /vendor/bin/teed \
+    --tzdev /dev/tkcore_admin \
+    --datapath /data/vendor/t6/fs \
+    --sptapath /data/vendor/t6/app \
+    --systapath /vendor/app/t6 \
+    --rpmbdev /dev/mmcblk0rpmb \
+    --rpmbdev /dev/rpmb0 \
+    --prot /mnt/vendor/persist/t6 \
+    --prot /mnt/vendor/protect_f/tee \
+    --prebuilt /vendor/app/t6/data \
+    --logpath /data/vendor/t6/tkcore.log \
+    --proprefix vendor.trustkernel
+    class core
+    user system
+    group system
+    capabilities SYS_RAWIO
+    disabled
+    seclabel u:r:recovery:s0
+
+service vendor.keymint-3-0-trustkernel /vendor/bin/hw/android.hardware.security.keymint@3.0-service.trustkernel
+    class hal
+    user system
+    group system
+    disabled
+    seclabel u:r:recovery:s0
+
+service vendor.gatekeeper /vendor/bin/hw/android.hardware.gatekeeper-service.trustkernel
+    class hal
+    user system
+    group system
+    disabled
+    seclabel u:r:recovery:s0
+
+on property:vendor.trustkernel.ready=true
+    start vendor.keymint-3-0-trustkernel
+    start vendor.gatekeeper

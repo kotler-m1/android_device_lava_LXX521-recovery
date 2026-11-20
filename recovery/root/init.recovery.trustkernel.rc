@@ -1,0 +1,74 @@
+# LAVA LXX521 - TrustKernel Recovery Integration
+# MT6878 / KeyMint 3.0 AIDL / Gatekeeper AIDL
+
+on init
+    mkdir /mnt/twrp_t6 0770 system system
+    mkdir /mnt/twrp_t6/fs 0770 system system
+    mkdir /mnt/twrp_t6/app 0770 system system
+    mkdir /mnt/twrp_t6/log 0770 system system
+
+on post-fs
+    # Persistent partitions are defined in recovery.fstab.
+    # They must be mounted before initializing the TEE.
+
+    mkdir /mnt/vendor/persist/t6 0770 system system
+    mkdir /mnt/vendor/protect_f/tee 0770 system system
+
+    chown system system /mnt/vendor/persist/t6
+    chown system system /mnt/vendor/protect_f/tee
+
+    wait /dev/tkcore_admin 10
+    wait /dev/tkcore_client 10
+    wait /dev/rpmb0 10
+
+    chmod 0600 /dev/tkcore_admin
+    chown system system /dev/tkcore_admin
+
+    chmod 0660 /dev/tkcore_client
+    chown root system /dev/tkcore_client
+
+    chmod 0660 /dev/rpmb0
+    chown root system /dev/rpmb0
+
+    setprop vendor.trustkernel.fs.mode 3
+    setprop vendor.trustkernel.fs.state ready
+    setprop vendor.trustkernel.log.state ready
+
+    start teed
+
+service teed /vendor/bin/teed \
+    --tzdev /dev/tkcore_admin \
+    --datapath /mnt/twrp_t6/fs \
+    --sptapath /mnt/twrp_t6/app \
+    --systapath /vendor/app/t6 \
+    --rpmbdev /dev/mmcblk0rpmb \
+    --rpmbdev /dev/rpmb0 \
+    --prot /mnt/vendor/persist/t6 \
+    --prot /mnt/vendor/protect_f/tee \
+    --prebuilt /vendor/app/t6/data \
+    --logpath /mnt/twrp_t6/log/tkcore.log \
+    --proprefix vendor.trustkernel
+    class core
+    user system
+    group system
+    capabilities SYS_RAWIO
+    disabled
+
+service vendor.keymint-3-0-trustkernel /vendor/bin/hw/android.hardware.security.keymint@3.0-service.trustkernel
+    class hal
+    user system
+    group system
+    disabled
+
+service vendor.gatekeeper /vendor/bin/hw/android.hardware.gatekeeper-service.trustkernel
+    class hal
+    user system
+    group system
+    disabled
+
+on property:init.svc.teed=running
+    setprop vendor.trustkernel.ready true
+
+on property:vendor.trustkernel.ready=true
+    start vendor.keymint-3-0-trustkernel
+    start vendor.gatekeeper
