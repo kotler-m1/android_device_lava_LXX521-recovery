@@ -103,7 +103,7 @@ if [ "$1" = "$FDEVICE" -o "$FOX_BUILD_DEVICE" = "$FDEVICE" ]; then
     # export OF_PATCH_AVB20=1
 
     # Existing Keymaster fallback retained from the old configuration.
-    export OF_DEFAULT_KEYMASTER_VERSION=4.1
+    export OF_DEFAULT_KEYMASTER_VERSION=3.0
 
     # Obsolescent workaround
     # export FOX_BUGGED_AOSP_ARB_WORKAROUND="1546300800"
